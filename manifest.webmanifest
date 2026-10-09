@@ -1,0 +1,12 @@
+{
+  "name": "Gmail Rules — メール振り分け管理",
+  "short_name": "Gmail Rules",
+  "description": "Gmailの自動振り分けをiPhoneから簡単に設定",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f8fb",
+  "theme_color": "#f6f8fb",
+  "lang": "ja",
+  "icons": [{"src":"./icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}]
+}

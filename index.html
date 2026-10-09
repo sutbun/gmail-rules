@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f6f8fb">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="description" content="Gmail標準の自動振り分けフィルタをスマートフォンから簡単に管理">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="./icon.svg">
+  <title>Gmail Rules</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <main class="shell">
+    <header class="masthead">
+      <div class="brand-icon" aria-hidden="true">✉</div>
+      <div class="brand-copy">
+        <h1>Gmail Rules</h1>
+        <p>不要なメールを、静かに整理。</p>
+      </div>
+      <span class="version" id="version"></span>
+    </header>
+
+    <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+
+    <section class="panel connect-panel" aria-labelledby="connect-title">
+      <div class="section-heading">
+        <div>
+          <h2 id="connect-title">Googleアカウント</h2>
+          <p id="connection-status">未接続</p>
+        </div>
+        <button class="button outline" id="disconnect" hidden>接続を解除</button>
+      </div>
+      <div id="initial-setup">
+        <label for="client-id">OAuth クライアントID</label>
+        <input id="client-id" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="xxxx.apps.googleusercontent.com">
+        <p class="hint">最初の一回だけ入力します。クライアントシークレットは入力しないでください。</p>
+      </div>
+      <button id="connect" class="button primary full">Googleアカウントに接続</button>
+      <p class="hint">認証後の通信先はGoogleのAPIだけです。メール本文は読み取りません。</p>
+    </section>
+
+    <div id="workspace" hidden>
+      <nav class="tabs" aria-label="画面切り替え">
+        <button class="tab active" id="tab-create" aria-current="page">ルールを作成</button>
+        <button class="tab" id="tab-list">登録済みルール <span id="rule-count"></span></button>
+      </nav>
+
+      <section class="panel" id="editor-panel" aria-labelledby="editor-title">
+        <div class="section-heading">
+          <div>
+            <h2 id="editor-title">新しい振り分け</h2>
+            <p>各行またはカンマで複数入力できます。</p>
+          </div>
+          <button id="cancel-edit" class="button outline" hidden>編集をやめる</button>
+        </div>
+        <form id="rule-form" novalidate>
+          <div class="field">
+            <label for="senders">送信元のメールアドレス <span class="optional">任意</span></label>
+            <textarea rows="2" id="senders" placeholder="news@example.com&#10;@shop.example.com"></textarea>
+            <p class="hint">複数なら、どれかの送信元に一致。ドメイン指定は広く一致するため注意してください。</p>
+          </div>
+          <div class="field">
+            <label for="subjects">件名に含まれる語句 <span class="optional">任意</span></label>
+            <textarea rows="2" id="subjects" placeholder="キャンペーン, セール, クーポン"></textarea>
+          </div>
+          <div class="field">
+            <label for="words">メール全体に含まれる語句 <span class="optional">任意</span></label>
+            <textarea rows="2" id="words" placeholder="期間限定, 配信のお知らせ"></textarea>
+            <p class="hint">件名と本文を含むGmail検索です。本文だけには限定できません。</p>
+          </div>
+          <div class="field divider-top">
+            <label for="exclude-subjects">除外：件名に含まれる語句</label>
+            <textarea rows="2" id="exclude-subjects" placeholder="重要, セキュリティ, 訂正"></textarea>
+          </div>
+          <div class="field">
+            <label for="exclude-words">除外：メール全体に含まれる語句</label>
+            <textarea rows="2" id="exclude-words" placeholder="利用明細, パスワード"></textarea>
+            <p class="hint">除外語句のいずれかが見つかったら、振り分けません。</p>
+          </div>
+          <fieldset class="field divider-top">
+            <legend>振り分け先</legend>
+            <label class="option"><input type="radio" name="action" value="archive" checked><span><strong>通知を抑えて保存（おすすめ）</strong><small>受信トレイから外してアーカイブ。Gmailの通知設定は「メインのみ」を推奨。</small></span></label>
+            <label class="option"><input type="radio" name="action" value="labelOnly"><span><strong>ラベルを付けるだけ</strong><small>受信トレイには残ります。通知は抑制されません。</small></span></label>
+            <label class="option"><input type="radio" name="action" value="trash"><span><strong>ゴミ箱に移動</strong><small>通常30日後に自動削除。重要メールが含まれないか確認してください。</small></span></label>
+          </fieldset>
+          <div class="field">
+            <label for="label-id">整理用ラベル <span class="optional">任意（「ラベルだけ」は必須）</span></label>
+            <select id="label-id"><option value="">ラベルなし</option></select>
+            <div class="inline-input">
+              <input type="text" id="new-label" placeholder="新しいラベル名">
+              <button type="button" id="create-label" class="button outline">ラベル作成</button>
+            </div>
+          </div>
+          <label class="checkbox-option"><input type="checkbox" id="mark-read"><span>自動的に既読にする</span></label>
+          <div class="preview" id="preview">送信元・件名・メール全体のいずれかを入力すると、ルールの条件を確認できます。</div>
+          <button type="submit" id="save-rule" class="button primary full">Gmailにルールを登録</button>
+          <p class="hint center">この設定は今後受信するメールに適用されます。既存のメールは変更しません。</p>
+        </form>
+      </section>
+
+      <section id="list-panel" class="panel" hidden aria-labelledby="list-title">
+        <div class="section-heading">
+          <div><h2 id="list-title">登録済みフィルタ</h2><p>Gmail標準のフィルタをすべて表示します。</p></div>
+          <button id="refresh" class="button outline">更新</button>
+        </div>
+        <div id="rule-list" class="rule-list"></div>
+        <p class="hint">編集できない特殊な条件は、<a href="https://mail.google.com/mail/u/0/#settings/filters" target="_blank" rel="noopener noreferrer">Gmailの設定画面</a>で確認できます。</p>
+      </section>
+    </div>
+    <footer>Gmail Rules はGoogle製品ではありません。<br>Gmailの設定を操作する個人用ツールです。</footer>
+  </main>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+  "name": "gmail-rules",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "description": "Personal Gmail filter editor for iPhone and desktop",
+  "scripts": {
+    "test": "node --test tests/*.test.js"
+  }
+}
